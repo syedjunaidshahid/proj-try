@@ -1,72 +1,34 @@
-// URL for US states dataset
-const statesPath = 'https://raw.githubusercontent.com/PublicaMundi/MappingAPI/master/data/geojson/us-states.json';
-
-// URL for US state capitals dataset
-const capitalsPath = 'https://gist.githubusercontent.com/mcwhittemore/1f81416ff74dd64decc6/raw/f34bddb3bf276a32b073ba79d0dd625a5735eedc/usa-state-capitals.geojson';
-
 // Initialize Leaflet map
-const map = L.map('map').setView([37.8, -96], 4); // Adjust the center and zoom level
+const map = L.map('map').setView([40.7128, -74.0060], 12); // Default to New York
 
-// Use Stadia Maps Alidade Satellite tile layer
-L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png', {
-    attribution: '© Stadia Maps',
-    maxZoom: 18,
+// Use OpenStreetMap as the base map
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '© OpenStreetMap contributors'
 }).addTo(map);
 
-// Load GeoJSON data for US states and capitals
-(async () => {
-    const statesData = await fetch(statesPath).then(response => response.json());
-    const capitalsData = await fetch(capitalsPath).then(response => response.json());
+// Array to store user recommendations
+const userRecommendations = [];
 
-    // Add GeoJSON layers for US states and capitals
-    const statesLayer = L.geoJSON(statesData, {
-        style: {
-            fillOpacity: 0.5,
-            color: 'white',
-            weight: 2
-        },
-        onEachFeature: onEachState
-    }).addTo(map);
-
-    const capitalsLayer = L.geoJSON(capitalsData, {
-        pointToLayer: (feature, latlng) => {
-            return L.circleMarker(latlng, {
-                radius: 8,
-                fillColor: 'red',
-                color: '#fff',
-                weight: 1,
-                opacity: 1,
-                fillOpacity: 0.8
-            });
-        },
-        onEachFeature: onEachCapital
-    }).addTo(map);
-})();
-
-// Function to handle quiz interaction for US states
-function onEachState(feature, layer) {
-    layer.on({
-        click: handleStateClick
-    });
+// Function to add a marker for user recommendation
+function addUserRecommendation(lat, lng, name, cuisine, comments, rating) {
+  const marker = L.marker([lat, lng]).addTo(map);
+  marker.bindPopup(`<b>${name}</b><br>${cuisine}<br>${comments}<br>Rating: ${rating}`);
+  userRecommendations.push({ lat, lng, name, cuisine, comments, rating });
 }
 
-// Function to handle quiz interaction for US state capitals
-function onEachCapital(feature, layer) {
-    layer.on({
-        click: handleCapitalClick
-    });
-}
+// Example: Adding a user recommendation
+addUserRecommendation(40.7128, -74.0060, 'Local Delight', 'Italian', 'Great pasta!', 4.5);
 
-// Function to handle US state click event
-function handleStateClick(e) {
-    const clickedState = e.target.feature.properties.name;
-    alert(`You clicked on ${clickedState} (State)!`);
-    // Implement scoring and next question logic for US states
-}
+// Event listener for map click to simulate user recommendation
+map.on('click', function (e) {
+  const name = prompt('Enter restaurant name:');
+  const cuisine = prompt('Enter cuisine type:');
+  const comments = prompt('Enter comments:');
+  const rating = parseFloat(prompt('Enter rating (1-5):'));
 
-// Function to handle US state capital click event
-function handleCapitalClick(e) {
-    const clickedCapital = e.target.feature.properties.name;
-    alert(`You clicked on ${clickedCapital} (State Capital)!`);
-    // Implement scoring and next question logic for US state capitals
-}
+  if (name && cuisine && comments && !isNaN(rating) && rating >= 1 && rating <= 5) {
+    addUserRecommendation(e.latlng.lat, e.latlng.lng, name, cuisine, comments, rating);
+  } else {
+    alert('Invalid input. Please try again.');
+  }
+});
